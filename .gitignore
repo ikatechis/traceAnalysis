@@ -1,0 +1,7 @@
+__pycache__/
+twoColourExampleData/
+*test*
+
+*.xml
+
+*.iml
