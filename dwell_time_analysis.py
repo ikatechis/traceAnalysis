@@ -6,6 +6,9 @@ Created on Tue May 28 12:05:13 2019
 """
 import numpy as np
 import sys
+import seaborn as sns
+sns.set(style="dark")
+sns.set_color_codes()
 
 #sys.path.append('../traceAnalysis - Ivo')
 import pandas as pd
@@ -23,21 +26,28 @@ mol = file.molecules[2]
 time = np.arange(0,len(mol.I(0))*exp.exposure_time, exp.exposure_time)
 
 dwelltimes = []
-
+dlabels = []
 for mol in file.molecules:
-    if mol.steps is not None:
-        print(mol.index)
-        times = mol.steps.time.sort_values().values
-        if times.size % 2 != 0:
-            continue
-        times1 = times.reshape((int(times.size/2), 2))
-        dwells = np.diff(times1, axis=1).flatten()
-        dwelltimes.append(dwells)
-dwelltimes = np.concatenate(dwelltimes).ravel()
+    if mol.steps is None:
+        continue
+    times = mol.steps.time.sort_values().values
+    times1 = times.reshape((int(times.size/2), 2))
+    dwells = np.diff(times1, axis=1).flatten()
+    dwelltimes.append(dwells)
+    labels = []
+    for d in dwells:
+        if times[0] < 0.1 and d == dwells[0]: lab = 'l'
+        if time[-1] - times[-1] <= 0.3 and d == dwells[-1]: lab = 'r'
+        else: lab = 'm'
+        labels.append(lab)
+    dlabels.append(labels)
 
-#
-plt.hist(dwelltimes, bins=20, density=True)
-time = np.arange(0, 20, 0.1)
+dlabels = [i for j in dlabels for i in j]
+dwelltimes = np.concatenate(dwelltimes).ravel()
+#dleft = [dwelltimes]
+
+plt.hist(dwelltimes, bins=50, density=True)
+time = np.arange(0, 100, 0.1)
 tau = np.average(dwelltimes)
 exp = 1/tau*np.exp(-time/tau)
 plt.plot(time, exp)

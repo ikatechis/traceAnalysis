@@ -22,40 +22,12 @@ from cursor_matplotlib import SnaptoCursor
 #mainPath = r'D:\ivoseverins\SURFdrive\Promotie\Code\Python\traceAnalysis\twoColourExampleData\HJ A'
 
 
-class Draw_lines(object):
-    def __init__(self, fig, iplot_radio):
-        self.lines = []
-        self.fig = fig
-        self.radio = iplot_radio  # The InteractivePlot instance
-
-    def onclick(self, event):
-        if self.fig.canvas.manager.toolbar.mode != '':  # self.fig.canvas.manager.toolmanager.active_toggle["default"] is not None:
-            return
-        if event.inaxes is None:
-            return
-        ax = event.inaxes
-        if event.button == 1:
-            if ax == self.fig.get_axes()[0] or ax == self.fig.get_axes()[1]:
-                sel = self.radio.value_selected*(ax == self.fig.get_axes()[0])
-                sel = sel + "E"*(ax == self.fig.get_axes()[1])
-                l = ax.axvline(x=event.xdata, zorder=0, lw=0.65, label="man "+sel)
-                self.lines.append(l)
-
-        if event.button == 3 and self.lines != []:
-            self.lines.pop().remove()
-        self.fig.canvas.draw()
-
-    def clear_all(self, event):
-        while self.lines:
-            self.lines.pop().remove()
-        self.fig.canvas.draw()
-
 class InteractivePlot(object):
     def __init__(self, file):
         self.file = file
         self.mol_indx = 0  #From which molecule to start the analysis
         #  See if there are saved analyzed molecules
-        self.file.load_from_excel(filename=self.file.name+'_steps_data.xlsx')
+        self.file.importExcel(filename=self.file.name+'_steps_data.xlsx')
 
     def plot_initialize(self):
         sns.set(style="dark")
@@ -138,6 +110,7 @@ class InteractivePlot(object):
         [slider.vline.remove() for slider in self.thrsliders]
 
         self.fig.show()
+        plt.pause(0.1)
 
     def plot_molecule(self, draw_plot=True):
         #clear the appropriate axes first
@@ -188,8 +161,8 @@ class InteractivePlot(object):
         self.cursors.append(SnaptoCursor(self.axes[0], self.time, self.green))
         self.cursors.append(SnaptoCursor(self.axes[1], self.time, self.fret))
         self.connect_events_to_canvas()
-
         self.fig.canvas.draw()
+        plt.pause(0.1)
 
     def connect_events_to_canvas(self):
         self.fig.canvas.mpl_connect('key_press_event', self.key_bind)
@@ -278,7 +251,7 @@ class InteractivePlot(object):
             if 'kon' not in self.mol.steps.columns:
                 kon = pd.DataFrame.from_records([{"kon": kon}])
                 self.mol.steps = pd.concat([self.mol.steps, kon], axis=1)
-                self.mol.steps.fillna(value='')
+                self.mol.steps.fillna(value='-')
             else:
                 self.mol.steps.loc[0, 'kon'] = kon
 
@@ -442,9 +415,38 @@ class InteractivePlot(object):
             self.checkbfret.rectangles[0].set_color("black")
         self.fig.canvas.draw()
 
+class Draw_lines(object):
+    def __init__(self, fig, iplot_radio):
+        self.lines = []
+        self.fig = fig
+        self.radio = iplot_radio  # The InteractivePlot instance
+
+    def onclick(self, event):
+        if self.fig.canvas.manager.toolbar.mode != '':  # self.fig.canvas.manager.toolmanager.active_toggle["default"] is not None:
+            return
+        if event.inaxes is None:
+            return
+        ax = event.inaxes
+        if event.button == 1:
+            if ax == self.fig.get_axes()[0] or ax == self.fig.get_axes()[1]:
+                sel = self.radio.value_selected*(ax == self.fig.get_axes()[0])
+                sel = sel + "E"*(ax == self.fig.get_axes()[1])
+                l = ax.axvline(x=event.xdata, zorder=0, lw=0.65, label="man "+sel)
+                self.lines.append(l)
+
+        if event.button == 3 and self.lines != []:
+            self.lines.pop().remove()
+        self.fig.canvas.draw()
+
+    def clear_all(self, event):
+        while self.lines:
+            self.lines.pop().remove()
+        self.fig.canvas.draw()
+
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 #mainPath = './traces'
-mainPath = 'N:/tnw/BN/CMJ/Shared/Iasonas/20190517_cas9_sigma/#7.20_streptavidin_200pM_biot-DNA00_10nM-cas9-WT_G'
+mainPath = './simulations'
 exp = analysis.Experiment(mainPath, 0.1)
 i = InteractivePlot(exp.files[0])
 i.plot_initialize()

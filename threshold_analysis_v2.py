@@ -22,34 +22,32 @@ def make_differences(trace, Ndif=2):
 
 def stepfinder(trace, threshold=100, include_start=True,
                include_end=True, max_steps=20):
-    trace = np.copy(trace)
+    trace_tmp = np.copy(trace)
     if include_start:
-        trace[0] = 0
-        trace[1] = 0
+        trace_tmp = np.insert(trace_tmp, 0, [0])
     if include_end:
-        trace[-1] = 0
-        trace[-2] = 0
+        trace_tmp = np.append(trace_tmp, [0, 0])  # Now it has +3 length
 
     start_frames = []
     stop_frames = []
-    for i in range(trace.size):
-        if i < len(trace)-2:
-            dif1 = trace[i+1] - trace[i]
-            dif2 = trace[i+2] - trace[i]
+    i = 0
+    while i < trace.size:
+        dif1 = trace_tmp[i+1] - trace_tmp[i]
+        dif2 = trace_tmp[i+2] - trace_tmp[i]
 
-            if dif1 > threshold and dif2 > threshold\
-                                and trace[i] < threshold:
-                for j in range(i, len(trace)):
-                    if j < len(trace)-2:
-                        dif1 = trace[j+1] - trace[j]
-                        dif2 = trace[j+2] - trace[j]
+        if dif1 > threshold and dif2 > threshold and trace_tmp[i] < threshold:  # this will not catch stoichiometry of 2
+            for j in range(i+2, len(trace)):  # start 2 positions after the step start until the length of the original trace
+                dif1 = trace_tmp[j+1] - trace_tmp[j]
+                dif2 = trace_tmp[j+2] - trace_tmp[j]
 
 
-                        if dif1 < -threshold and dif2 < -threshold\
-                                    and trace[j+2] < trace[i] + 0.33*trace[j]:
-                            start_frames.append(i-1)
-                            stop_frames.append(j-1)
-                            break
+                if dif1 < -threshold and dif2 < -threshold\
+                            and trace_tmp[j+2] < trace[i] + 0.33*trace[j]:
+                    start_frames.append(i+1)
+                    stop_frames.append((j+1)*(j != len(trace)) + j*(j == len(trace)))
+                    i = j
+                    break
+        i +=1
 
     if not include_end and len(start_frames) == len(stop_frames) + 1: # if the
             start_frames = start_frames[:-1] # exclude the last start_frame
